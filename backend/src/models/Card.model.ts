@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
-import { ICard } from '../interfaces';
-import { CardStatus } from '../types/enums';
+import { ICard } from '../interfaces/index.js';
+import { CardStatus } from '../types/enums.js';
 
 const cardSchema = new Schema<ICard>({
   cardUID: {

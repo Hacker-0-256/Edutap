@@ -22,3 +22,9 @@ declare module 'mongoose' {
     updatedAt: Date;
   }
 }
+declare module 'mongoose' {
+  interface Document {
+    comparePassword?(candidatePassword: string): Promise<boolean>;
+    changedPasswordAfter?(JWTTimestamp: number): boolean;
+  }
+}

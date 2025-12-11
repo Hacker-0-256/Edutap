@@ -1,2 +1,2 @@
-export * from './enums';
-export * from './mongoose.d';
+export * from './enums.js';
+export * from './mongoose.d.js';

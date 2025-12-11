@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
-import { IAttendance } from '../interfaces';
-import { AttendanceType } from '../types/enums';
+import { IAttendance } from '../interfaces/index.js';
+import { AttendanceType } from '../types/enums.js';
 
 const attendanceSchema = new Schema<IAttendance>({
   eventType: {

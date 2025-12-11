@@ -1,13 +1,13 @@
 import { Document, Types } from 'mongoose';
-  import { 
-    UserRole, 
-    CardStatus, 
-    AttendanceType, 
-    TransactionType, 
-    DeviceType, 
+  import {
+    UserRole,
+    CardStatus,
+    AttendanceType,
+    TransactionType,
+    DeviceType,
     DeviceStatus,
-    NotificationType 
-  } from '../types/enums';
+    NotificationType
+  } from '../types/enums.js';
 
 // Base interface for all models
 // export interface IBaseDocument extends Document {

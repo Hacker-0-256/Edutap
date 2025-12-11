@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
-import { IDevice } from '../interfaces';
-import { DeviceType, DeviceStatus } from '../types/enums';
+import { IDevice } from '../interfaces/index.js';
+import { DeviceType, DeviceStatus } from '../types/enums.js';
 
 const deviceSchema = new Schema<IDevice>({
   deviceId: {

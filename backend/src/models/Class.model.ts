@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { IClass } from '../interfaces';
+import { IClass } from '../interfaces/index.js';
 
 const classSchema = new Schema<IClass>({
   className: {

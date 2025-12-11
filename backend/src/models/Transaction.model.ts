@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
-import { ITransaction } from '../interfaces';
-import { TransactionType } from '../types/enums';
+import { ITransaction } from '../interfaces/index.js';
+import { TransactionType } from '../types/enums.js';
 
 const transactionSchema = new Schema<ITransaction>({
   transactionType: {
