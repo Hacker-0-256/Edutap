@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    /* Base Options */
+    "target": "ES2022",                  // Set target environment to modern ECMAScript
+    "lib": ["ES2022"],                   // Include type definitions for modern ES features
+    
+    /* Module Resolution & Interoperability */
+    "module": "NodeNext",                // Use Node.js's native module system for output
+    "moduleResolution": "Bundler",       // Recommended for working with 'paths' and build tools
+    "esModuleInterop": true,             // Enables compatibility for default/named imports (e.g., in Mongoose/Express)
+    "allowSyntheticDefaultImports": true, // Works with esModuleInterop
+    "resolveJsonModule": true,           // Allow importing .json files
+    
+    /* Output Directories */
+    "outDir": "./dist",                  // Directory for compiled JavaScript files
+    "rootDir": "./src",                  // Directory containing TypeScript source files
+    
+    /* Path Aliases */
+    "baseUrl": ".",                      // Required root for 'paths' resolution
+    "paths": {
+      "@/*": ["src/*"]                   // Define your path alias
+    },
+    
+    /* Type Checking & Compliance */
+    "strict": true,                      // Enable all strict type-checking options
+    "forceConsistentCasingInFileNames": true, // Ensure consistent file naming
+    "skipLibCheck": true,                // Skip type checking of declaration files from node_modules
+    
+    /* Source Maps & Declarations */
+    "declaration": true,                 // Generate .d.ts files (useful for libraries/tooling)
+    "sourceMap": true,                   // Generate sourcemap files for easier debugging
+    
+    /* Decorators (If needed for frameworks like NestJS or TypeORM) */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    
+    /* Deprecation Silencing (To ignore the 'baseUrl' warning) */
+    "ignoreDeprecations": "6.0"          // Silences the baseUrl deprecation warning
+  },
+  
+  /* File Inclusion & Exclusion */
+  "include": ["src/**/*"],              // Include everything inside the src directory
+  "exclude": ["node_modules", "dist"]   // Exclude typical output and dependency directories
+}
