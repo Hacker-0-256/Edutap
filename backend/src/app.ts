@@ -1,0 +1,135 @@
+import express from 'express';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+
+// Import routes
+import authRoutes from './routes/auth.routes.js';
+import attendanceRoutes from './routes/attendance.routes.js';
+import studentsRoutes from './routes/students.routes.js';
+import parentsRoutes from './routes/parents.routes.js';
+import devicesRoutes from './routes/devices.routes.js';
+import logsRoutes from './routes/logs.routes.js';
+import schoolsRoutes from './routes/schools.routes.js';
+import schoolRoutes from './routes/school.routes.js';
+import parentRoutes from './routes/parent.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+
+// Set up Socket.io for attendance notifications
+import { setSocketIO } from './functions/attendance.js';
+
+// Create Express app
+const app = express();
+
+// Create HTTP server for Socket.io
+const server = createServer(app);
+
+// Initialize Socket.io
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Set Socket.io for attendance notifications
+setSocketIO(io);
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Request logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/students', studentsRoutes);
+app.use('/api/parents', parentsRoutes);
+app.use('/api/devices', devicesRoutes);
+app.use('/api/logs', logsRoutes);
+app.use('/api/schools', schoolsRoutes);
+app.use('/api/school', schoolRoutes);
+app.use('/api/parent', parentRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Health check
+app.get('/health', (req, res) => {
+  const dbStatus = mongoose.connection.readyState;
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    database: dbStatus === 1 ? 'connected' : 'disconnected'
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    path: req.originalUrl
+  });
+});
+
+// Error handling
+app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Error:', error.message);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error'
+  });
+});
+
+// Socket.io real-time features
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  // Join school room for real-time updates
+  socket.on('join-school', (schoolId) => {
+    socket.join(`school-${schoolId}`);
+    console.log(`Client ${socket.id} joined school-${schoolId}`);
+  });
+
+  // Join device room for device-specific updates
+  socket.on('join-device', (deviceId) => {
+    socket.join(`device-${deviceId}`);
+    console.log(`Client ${socket.id} joined device-${deviceId}`);
+  });
+
+  // Handle device heartbeat
+  socket.on('device-heartbeat', (data) => {
+    // Broadcast device status to school room
+    socket.to(`school-${data.schoolId}`).emit('device-status-update', {
+      deviceId: data.deviceId,
+      status: 'online',
+      lastSeen: new Date(),
+      metrics: data.metrics
+    });
+  });
+
+  // Handle attendance event
+  socket.on('attendance-recorded', (data) => {
+    // Broadcast to school room
+    socket.to(`school-${data.schoolId}`).emit('new-attendance', {
+      studentName: data.studentName,
+      type: data.type,
+      timestamp: data.timestamp,
+      location: data.location
+    });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+// Export both app and server for different use cases
+export { app, server, io };
+export default app;
