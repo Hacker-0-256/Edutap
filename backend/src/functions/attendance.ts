@@ -84,11 +84,9 @@ export async function recordAttendance(
     // 7. Get parent information
     const parent = parentData;
 
-    // 8. Send SMS notification to parent (disabled for testing)
-    let smsResult: { success: boolean; error?: string } = { success: true, error: 'SMS disabled for testing' };
+    // 8. Send SMS notification to parent
+    let smsResult: { success: boolean; error?: string } = { success: true };
 
-    // TODO: Re-enable SMS when credentials are properly configured
-    /*
     if (parent && parent.receiveSMS && parent.phone) {
       // Format time nicely
       const timeString = now.toLocaleTimeString('en-US', {
@@ -107,7 +105,6 @@ export async function recordAttendance(
         error: smsResponse.success ? undefined : smsResponse.error
       };
     }
-    */
 
     // Update attendance record with SMS status
     attendance.smsNotificationSent = smsResult.success;
