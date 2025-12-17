@@ -4,6 +4,10 @@ import { Parent } from '../models/parent.js';
 import { Student } from '../models/student.js';
 import { Attendance } from '../models/attendance.js';
 import { Device } from '../models/device.js';
+import { Account } from '../models/account.js';
+import { Merchant } from '../models/merchant.js';
+import { Transaction } from '../models/transaction.js';
+import { TopUp } from '../models/topUp.js';
 
 // Sample data for seeding the database
 const sampleData = {
@@ -191,7 +195,7 @@ const sampleData = {
     {
       deviceId: "rfid-gate-001",
       name: "Main Entrance RFID Reader",
-      deviceType: "rfid_reader",
+      deviceType: "attendance_reader",
       location: {
         building: "Main Building",
         floor: "Ground",
@@ -204,7 +208,7 @@ const sampleData = {
     {
       deviceId: "rfid-gate-002",
       name: "Side Entrance RFID Reader",
-      deviceType: "rfid_reader",
+      deviceType: "attendance_reader",
       location: {
         building: "Annex Building",
         floor: "Ground",
@@ -217,7 +221,7 @@ const sampleData = {
     {
       deviceId: "rfid-gate-003",
       name: "Sunrise Main Gate",
-      deviceType: "rfid_reader",
+      deviceType: "attendance_reader",
       location: {
         building: "Main Building",
         floor: "Ground",
@@ -225,6 +229,79 @@ const sampleData = {
         zone: "main-gate"
       },
       capabilities: ["rfid", "nfc"],
+      schoolIndex: 1
+    },
+    {
+      deviceId: "pos-canteen-001",
+      name: "Main Canteen POS",
+      deviceType: "pos",
+      location: {
+        building: "Main Building",
+        floor: "Ground",
+        room: "Canteen",
+        zone: "canteen"
+      },
+      capabilities: ["rfid", "payment"],
+      schoolIndex: 0,
+      merchantIndex: 0
+    },
+    {
+      deviceId: "pos-canteen-002",
+      name: "Sunrise Canteen POS",
+      deviceType: "pos",
+      location: {
+        building: "Main Building",
+        floor: "Ground",
+        room: "Canteen",
+        zone: "canteen"
+      },
+      capabilities: ["rfid", "payment"],
+      schoolIndex: 1,
+      merchantIndex: 1
+    }
+  ],
+
+  merchants: [
+    {
+      name: "Green Valley Canteen",
+      type: "canteen",
+      location: {
+        building: "Main Building",
+        floor: "Ground",
+        room: "Canteen"
+      },
+      contact: {
+        managerName: "Chef Maria",
+        phone: "+1-555-0201"
+      },
+      operatingHours: {
+        monday: { open: "08:00", close: "15:00" },
+        tuesday: { open: "08:00", close: "15:00" },
+        wednesday: { open: "08:00", close: "15:00" },
+        thursday: { open: "08:00", close: "15:00" },
+        friday: { open: "08:00", close: "15:00" }
+      },
+      schoolIndex: 0
+    },
+    {
+      name: "Sunrise School Canteen",
+      type: "canteen",
+      location: {
+        building: "Main Building",
+        floor: "Ground",
+        room: "Canteen"
+      },
+      contact: {
+        managerName: "Chef James",
+        phone: "+1-555-0202"
+      },
+      operatingHours: {
+        monday: { open: "08:30", close: "14:30" },
+        tuesday: { open: "08:30", close: "14:30" },
+        wednesday: { open: "08:30", close: "14:30" },
+        thursday: { open: "08:30", close: "14:30" },
+        friday: { open: "08:30", close: "14:30" }
+      },
       schoolIndex: 1
     }
   ]
@@ -278,6 +355,10 @@ export async function seedDatabase() {
     await Student.deleteMany({});
     await Attendance.deleteMany({});
     await Device.deleteMany({});
+    await Account.deleteMany({});
+    await Merchant.deleteMany({});
+    await Transaction.deleteMany({});
+    await TopUp.deleteMany({});
 
     // Create schools
     console.log('🏫 Creating schools...');
@@ -309,10 +390,18 @@ export async function seedDatabase() {
     // Create parents
     console.log('👨‍👩‍👧 Creating parents...');
     const createdParents = [];
-    for (const parentData of sampleData.parents) {
-      const parent = await Parent.create(parentData);
+    for (let i = 0; i < sampleData.parents.length; i++) {
+      const parentData = sampleData.parents[i];
+      // Assign school - first 2 parents to first school, last 2 to second school
+      const schoolIndex = i < 2 ? 0 : 1;
+      const school = createdSchools[schoolIndex];
+      
+      const parent = await Parent.create({
+        ...parentData,
+        schoolId: school._id
+      });
       createdParents.push(parent);
-      console.log(`  ✓ Created parent: ${parent.firstName} ${parent.lastName}`);
+      console.log(`  ✓ Created parent: ${parent.firstName} ${parent.lastName} for ${school.name}`);
     }
 
     // Create parent users
@@ -349,18 +438,48 @@ export async function seedDatabase() {
       console.log(`  ✓ Created student: ${student.firstName} ${student.lastName} (${student.studentId})`);
     }
 
+    // Create accounts for students
+    console.log('💰 Creating student accounts...');
+    const createdAccounts = [];
+    for (const student of createdStudents) {
+      const initialBalance = Math.floor(Math.random() * 5000) + 1000; // 1000-6000 RWF
+      const account = await Account.create({
+        studentId: student._id,
+        balance: initialBalance,
+        currency: 'RWF'
+      });
+      
+      student.accountId = account._id;
+      await student.save();
+      
+      createdAccounts.push(account);
+      console.log(`  ✓ Created account for ${student.firstName} ${student.lastName} with balance: ${initialBalance} RWF`);
+    }
+
+    // Create merchants
+    console.log('🏪 Creating merchants...');
+    const createdMerchants = [];
+    for (const merchantData of sampleData.merchants) {
+      const school = createdSchools[merchantData.schoolIndex];
+      const merchant = await Merchant.create({
+        ...merchantData,
+        schoolId: school._id
+      });
+      createdMerchants.push(merchant);
+      console.log(`  ✓ Created merchant: ${merchant.name}`);
+    }
+
     // Create devices
     console.log('🔧 Creating IoT devices...');
+    const createdDevices = [];
     for (const deviceData of sampleData.devices) {
       const school = createdSchools[deviceData.schoolIndex];
-      const device = await Device.create({
+      const deviceConfig: any = {
         ...deviceData,
         schoolId: school._id,
         status: 'online',
         apiKey: `api-key-${deviceData.deviceId}`,
         secretKey: `secret-key-${deviceData.deviceId}`,
-        batteryLevel: 85 + Math.floor(Math.random() * 15), // 85-100%
-        signalStrength: 70 + Math.floor(Math.random() * 30), // 70-100%
         stats: {
           totalScans: Math.floor(Math.random() * 1000) + 500,
           successfulScans: 0,
@@ -368,13 +487,21 @@ export async function seedDatabase() {
           uptime: Math.floor(Math.random() * 720) + 100, // 100-820 hours
           lastReset: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000) // Within last 30 days
         }
-      });
+      };
+
+      // Link POS devices to merchants
+      if (deviceData.deviceType === 'pos' && deviceData.merchantIndex !== undefined) {
+        deviceConfig.merchantId = createdMerchants[deviceData.merchantIndex]._id;
+      }
+
+      const device = await Device.create(deviceConfig);
 
       // Update successful scans
       device.stats.successfulScans = Math.floor(device.stats.totalScans * 0.98); // 98% success rate
       device.stats.failedScans = device.stats.totalScans - device.stats.successfulScans;
       await device.save();
 
+      createdDevices.push(device);
       console.log(`  ✓ Created device: ${device.name} (${device.deviceId})`);
     }
 
@@ -387,6 +514,93 @@ export async function seedDatabase() {
       }
       console.log(`  ✓ Created ${attendanceRecords.length} attendance records for ${school.name}`);
     }
+
+    // Generate sample top-ups
+    console.log('💳 Generating sample top-ups...');
+    let topUpCount = 0;
+    for (let i = 0; i < createdStudents.length; i++) {
+      const student = createdStudents[i];
+      const account = createdAccounts[i];
+      const parent = createdParents.find(p => p._id.toString() === student.parentId.toString());
+      
+      // Create 1-3 top-ups per student
+      const numTopUps = Math.floor(Math.random() * 3) + 1;
+      for (let j = 0; j < numTopUps; j++) {
+        const amount = Math.floor(Math.random() * 3000) + 1000; // 1000-4000 RWF
+        const daysAgo = Math.floor(Math.random() * 30); // Within last 30 days
+        const topUpDate = new Date();
+        topUpDate.setDate(topUpDate.getDate() - daysAgo);
+        
+        const topUp = await TopUp.create({
+          studentId: student._id,
+          accountId: account._id,
+          parentId: parent?._id,
+          amount,
+          currency: 'RWF',
+          paymentMethod: ['cash', 'mobile_money', 'bank_transfer'][Math.floor(Math.random() * 3)],
+          status: 'completed',
+          internalRef: `TUP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          processedAt: topUpDate,
+          completedAt: topUpDate
+        });
+
+        // Create corresponding transaction
+        await Transaction.createTopUp(
+          student._id,
+          account._id,
+          amount,
+          topUp.paymentMethod,
+          topUp.internalRef
+        );
+
+        // Update account balance
+        await account.addBalance(amount, topUp.paymentMethod);
+        topUpCount++;
+      }
+    }
+    console.log(`  ✓ Created ${topUpCount} top-up records`);
+
+    // Generate sample transactions (purchases)
+    console.log('🛒 Generating sample transactions...');
+    let transactionCount = 0;
+    const posDevices = createdDevices.filter(d => d.deviceType === 'pos');
+    
+    for (let i = 0; i < 20; i++) { // Generate 20 sample transactions
+      const student = createdStudents[Math.floor(Math.random() * createdStudents.length)];
+      const account = createdAccounts.find(a => a.studentId.toString() === student._id.toString());
+      if (!account || account.balance < 100) continue; // Skip if no account or insufficient balance
+      
+      const posDevice = posDevices[Math.floor(Math.random() * posDevices.length)];
+      const merchant = createdMerchants.find(m => m._id.toString() === posDevice.merchantId?.toString());
+      if (!merchant) continue;
+      
+      const amount = Math.floor(Math.random() * 2000) + 200; // 200-2200 RWF
+      if (account.balance < amount) continue; // Skip if insufficient balance
+      
+      const daysAgo = Math.floor(Math.random() * 30); // Within last 30 days
+      const transactionDate = new Date();
+      transactionDate.setDate(transactionDate.getDate() - daysAgo);
+      
+      try {
+        const transaction = await Transaction.createPurchase(
+          student._id,
+          account._id,
+          amount,
+          merchant._id,
+          posDevice.deviceId,
+          posDevice.location?.room || 'Canteen',
+          `Purchase at ${merchant.name}`
+        );
+        
+        // Update merchant sales
+        await merchant.updateSales(amount);
+        transactionCount++;
+      } catch (error) {
+        // Skip if transaction fails (e.g., insufficient balance)
+        continue;
+      }
+    }
+    console.log(`  ✓ Created ${transactionCount} transaction records`);
 
     console.log('\n🎉 Database seeding completed successfully!');
     console.log('\n📋 Sample Login Credentials:');
@@ -407,7 +621,11 @@ export async function seedDatabase() {
     console.log(`  Staff: ${createdStaff.length}`);
     console.log(`  Parents: ${createdParents.length}`);
     console.log(`  Students: ${createdStudents.length}`);
-    console.log(`  Devices: ${sampleData.devices.length}`);
+    console.log(`  Accounts: ${createdAccounts.length}`);
+    console.log(`  Merchants: ${createdMerchants.length}`);
+    console.log(`  Devices: ${createdDevices.length}`);
+    console.log(`  Top-ups: ${topUpCount}`);
+    console.log(`  Transactions: ${transactionCount}`);
     console.log(`  Attendance Records: Generated for past 7 days`);
 
   } catch (error) {

@@ -2,12 +2,83 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user.js';
 
+// Validate password strength
+function validatePasswordStrength(password: string): { valid: boolean; error?: string } {
+  // Minimum length: 8 characters
+  if (password.length < 8) {
+    return { valid: false, error: 'Password must be at least 8 characters long' };
+  }
+
+  // Check for at least one uppercase letter
+  if (!/[A-Z]/.test(password)) {
+    return { valid: false, error: 'Password must contain at least one uppercase letter' };
+  }
+
+  // Check for at least one lowercase letter
+  if (!/[a-z]/.test(password)) {
+    return { valid: false, error: 'Password must contain at least one lowercase letter' };
+  }
+
+  // Check for at least one number
+  if (!/[0-9]/.test(password)) {
+    return { valid: false, error: 'Password must contain at least one number' };
+  }
+
+  // Check for at least one special character
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    return { valid: false, error: 'Password must contain at least one special character' };
+  }
+
+  return { valid: true };
+}
+
 // Simple function to register a new user
-export async function registerUser(email: string, password: string, role: string, firstName: string, lastName: string) {
+export async function registerUser(
+  email: string,
+  password: string,
+  role: string,
+  firstName: string,
+  lastName: string,
+  schoolId?: string,
+  parentId?: string
+) {
+  // Validate password strength
+  const passwordValidation = validatePasswordStrength(password);
+  if (!passwordValidation.valid) {
+    throw new Error(passwordValidation.error);
+  }
+
   // Check if user already exists
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw new Error('User with this email already exists');
+  }
+
+  // Validate role-specific requirements
+  if (role === 'school' && !schoolId) {
+    throw new Error('schoolId is required for school role');
+  }
+
+  if (role === 'parent' && !parentId) {
+    throw new Error('parentId is required for parent role');
+  }
+
+  // Validate schoolId exists if provided
+  if (schoolId) {
+    const { School } = await import('../models/school.js');
+    const school = await School.findById(schoolId);
+    if (!school) {
+      throw new Error('School not found');
+    }
+  }
+
+  // Validate parentId exists if provided
+  if (parentId) {
+    const { Parent } = await import('../models/parent.js');
+    const parent = await Parent.findById(parentId);
+    if (!parent) {
+      throw new Error('Parent not found');
+    }
   }
 
   // Create new user
@@ -16,7 +87,9 @@ export async function registerUser(email: string, password: string, role: string
     password,
     role,
     firstName,
-    lastName
+    lastName,
+    schoolId: schoolId || undefined,
+    parentId: parentId || undefined
   });
 
   // Generate JWT token

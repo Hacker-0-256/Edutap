@@ -1,11 +1,27 @@
 import express from 'express';
 import { Student } from '../models/student.js';
 import { Parent } from '../models/parent.js';
+import {
+  registerStudentWithParentController,
+  registerMultipleStudentsController
+} from '../controllers/studentRegistration.controller.js';
+import { authenticateToken, requireRole } from '../middleware/auth.middleware.js';
+import { validate } from '../middleware/validation.middleware.js';
+import { registerStudentWithParentSchema } from '../validation/schemas.js';
 
 const router = express.Router();
 
-// Create a new student
-router.post('/', async (req, res) => {
+// All routes require authentication
+router.use(authenticateToken);
+
+// Register student with parent/guardian (recommended - creates parent if needed)
+router.post('/register', requireRole('admin', 'school'), validate(registerStudentWithParentSchema), registerStudentWithParentController);
+
+// Register multiple students (siblings) with same parent
+router.post('/register-multiple', requireRole('admin', 'school'), registerMultipleStudentsController);
+
+// Create a new student (legacy - requires existing parentId)
+router.post('/', requireRole('admin', 'school'), async (req, res) => {
   try {
     const { 
       firstName, 
@@ -62,7 +78,7 @@ router.post('/', async (req, res) => {
 });
 
 // Get all students
-router.get('/', async (req, res) => {
+router.get('/', requireRole('admin', 'school'), async (req, res) => {
   try {
     const students = await Student.find({ isActive: true })
       .populate('parentId', 'firstName lastName phone email')
@@ -83,7 +99,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get a single student by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireRole('admin', 'school', 'parent'), async (req, res) => {
   try {
     const student = await Student.findById(req.params.id)
       .populate('parentId')
@@ -110,7 +126,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update a student
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole('admin', 'school'), async (req, res) => {
   try {
     const student = await Student.findByIdAndUpdate(
       req.params.id,
@@ -140,7 +156,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete (deactivate) a student
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin', 'school'), async (req, res) => {
   try {
     const student = await Student.findByIdAndUpdate(
       req.params.id,

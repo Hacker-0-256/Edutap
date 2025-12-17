@@ -267,3 +267,403 @@ export async function getUsers(req: any, res: any) {
     });
   }
 }
+
+// Get all transactions (admin dashboard)
+export async function getAllTransactions(req: any, res: any) {
+  try {
+    const { startDate, endDate, schoolId, merchantId, status, type, limit = 100, page = 1 } = req.query;
+
+    // Build query
+    const query: any = {};
+    
+    if (schoolId) {
+      // Get all students for this school, then filter transactions
+      const { Student } = await import('../models/student.js');
+      const students = await Student.find({ schoolId });
+      query.studentId = { $in: students.map(s => s._id) };
+    }
+    
+    if (merchantId) query.merchantId = merchantId;
+    if (status) query.status = status;
+    if (type) query.type = type;
+    
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) query.date.$gte = startDate;
+      if (endDate) query.date.$lte = endDate;
+    }
+
+    const { Transaction } = await import('../models/transaction.js');
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+    
+    const transactions = await Transaction.find(query)
+      .sort({ timestamp: -1 })
+      .limit(parseInt(limit as string))
+      .skip(skip)
+      .populate('studentId', 'firstName lastName studentId grade class')
+      .populate('merchantId', 'name type')
+      .populate('accountId');
+
+    const total = await Transaction.countDocuments(query);
+
+    // Calculate summary statistics
+    const summary = await Transaction.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$amount' },
+          totalTransactions: { $sum: 1 },
+          averageAmount: { $avg: '$amount' }
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        transactions: transactions.map(txn => ({
+          id: txn._id,
+          reference: txn.reference,
+          type: txn.type,
+          amount: txn.amount,
+          status: txn.status,
+          student: txn.studentId ? {
+            name: `${(txn.studentId as any).firstName} ${(txn.studentId as any).lastName}`,
+            studentId: (txn.studentId as any).studentId,
+            grade: (txn.studentId as any).grade,
+            class: (txn.studentId as any).class
+          } : null,
+          merchant: txn.merchantId ? {
+            name: (txn.merchantId as any).name,
+            type: (txn.merchantId as any).type
+          } : null,
+          balanceAfter: txn.balanceAfter,
+          timestamp: txn.timestamp,
+          date: txn.date
+        })),
+        summary: summary[0] || {
+          totalRevenue: 0,
+          totalTransactions: 0,
+          averageAmount: 0
+        },
+        pagination: {
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+          total,
+          pages: Math.ceil(total / parseInt(limit as string))
+        }
+      }
+    });
+
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+}
+
+// Get sales analytics (admin dashboard)
+export async function getSalesAnalytics(req: any, res: any) {
+  try {
+    const { startDate, endDate, schoolId, groupBy = 'day' } = req.query;
+
+    const { Transaction } = await import('../models/transaction.js');
+    const { Merchant } = await import('../models/merchant.js');
+
+    // Build match query
+    const matchQuery: any = {
+      type: 'purchase',
+      status: 'completed'
+    };
+
+    if (schoolId) {
+      const { Student } = await import('../models/student.js');
+      const students = await Student.find({ schoolId });
+      matchQuery.studentId = { $in: students.map(s => s._id) };
+    }
+
+    if (startDate || endDate) {
+      matchQuery.date = {};
+      if (startDate) matchQuery.date.$gte = startDate;
+      if (endDate) matchQuery.date.$lte = endDate;
+    }
+
+    // Group by date
+    let groupFormat: any = {};
+    if (groupBy === 'day') {
+      groupFormat = { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } };
+    } else if (groupBy === 'month') {
+      groupFormat = { $dateToString: { format: '%Y-%m', date: '$timestamp' } };
+    } else if (groupBy === 'week') {
+      groupFormat = { $dateToString: { format: '%Y-W%V', date: '$timestamp' } };
+    }
+
+    const salesByDate = await Transaction.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: groupFormat,
+          totalRevenue: { $sum: '$amount' },
+          transactionCount: { $sum: 1 },
+          averageAmount: { $avg: '$amount' }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Sales by merchant
+    const salesByMerchant = await Transaction.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: '$merchantId',
+          totalRevenue: { $sum: '$amount' },
+          transactionCount: { $sum: 1 },
+          averageAmount: { $avg: '$amount' }
+        }
+      },
+      { $sort: { totalRevenue: -1 } },
+      { $limit: 10 }
+    ]);
+
+    // Populate merchant names
+    const merchantIds = salesByMerchant.map((s: any) => s._id).filter(Boolean);
+    const merchants = await Merchant.find({ _id: { $in: merchantIds } });
+    const merchantMap = new Map(merchants.map((m: any) => [m._id.toString(), m]));
+
+    const salesByMerchantWithNames = salesByMerchant.map((s: any) => ({
+      merchant: s._id ? {
+        id: s._id,
+        name: merchantMap.get(s._id.toString())?.name || 'Unknown',
+        type: merchantMap.get(s._id.toString())?.type || 'Unknown'
+      } : null,
+      totalRevenue: s.totalRevenue,
+      transactionCount: s.transactionCount,
+      averageAmount: Math.round(s.averageAmount * 100) / 100
+    }));
+
+    // Overall summary
+    const overallSummary = await Transaction.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$amount' },
+          totalTransactions: { $sum: 1 },
+          averageAmount: { $avg: '$amount' },
+          minAmount: { $min: '$amount' },
+          maxAmount: { $max: '$amount' }
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        salesByDate: salesByDate.map((s: any) => ({
+          date: s._id,
+          totalRevenue: s.totalRevenue,
+          transactionCount: s.transactionCount,
+          averageAmount: Math.round(s.averageAmount * 100) / 100
+        })),
+        salesByMerchant: salesByMerchantWithNames,
+        overallSummary: overallSummary[0] || {
+          totalRevenue: 0,
+          totalTransactions: 0,
+          averageAmount: 0,
+          minAmount: 0,
+          maxAmount: 0
+        }
+      }
+    });
+
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+}
+
+// Get account summaries (admin dashboard)
+export async function getAccountSummaries(req: any, res: any) {
+  try {
+    const { schoolId, minBalance, maxBalance, status } = req.query;
+
+    const { Account } = await import('../models/account.js');
+    const { Student } = await import('../models/student.js');
+
+    // Build query
+    const query: any = { isActive: true };
+    
+    if (schoolId) {
+      const students = await Student.find({ schoolId });
+      query.studentId = { $in: students.map(s => s._id) };
+    }
+    
+    if (minBalance !== undefined || maxBalance !== undefined) {
+      query.balance = {};
+      if (minBalance !== undefined) query.balance.$gte = parseFloat(minBalance as string);
+      if (maxBalance !== undefined) query.balance.$lte = parseFloat(maxBalance as string);
+    }
+
+    const accounts = await Account.find(query)
+      .populate('studentId', 'firstName lastName studentId grade class schoolId')
+      .sort({ balance: -1 });
+
+    // Calculate statistics
+    const stats = await Account.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          totalBalance: { $sum: '$balance' },
+          accountCount: { $sum: 1 },
+          averageBalance: { $avg: '$balance' },
+          minBalance: { $min: '$balance' },
+          maxBalance: { $max: '$balance' }
+        }
+      }
+    ]);
+
+    // Filter by status if provided
+    let filteredAccounts = accounts;
+    if (status === 'low') {
+      filteredAccounts = accounts.filter((acc: any) => acc.balance < 500);
+    } else if (status === 'very_low') {
+      filteredAccounts = accounts.filter((acc: any) => acc.balance < 100);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        accounts: filteredAccounts.map((acc: any) => ({
+          id: acc._id,
+          balance: acc.balance,
+          currency: acc.currency,
+          student: acc.studentId ? {
+            name: `${(acc.studentId as any).firstName} ${(acc.studentId as any).lastName}`,
+            studentId: (acc.studentId as any).studentId,
+            grade: (acc.studentId as any).grade,
+            class: (acc.studentId as any).class
+          } : null,
+          lastTopUp: acc.lastTopUp,
+          isActive: acc.isActive
+        })),
+        statistics: stats[0] || {
+          totalBalance: 0,
+          accountCount: 0,
+          averageBalance: 0,
+          minBalance: 0,
+          maxBalance: 0
+        }
+      }
+    });
+
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+}
+
+// Get revenue reports (admin dashboard)
+export async function getRevenueReports(req: any, res: any) {
+  try {
+    const { startDate, endDate, schoolId, period = 'day' } = req.query;
+
+    const { Transaction } = await import('../models/transaction.js');
+
+    // Build match query
+    const matchQuery: any = {
+      type: { $in: ['purchase', 'top-up'] },
+      status: 'completed'
+    };
+
+    if (schoolId) {
+      const { Student } = await import('../models/student.js');
+      const students = await Student.find({ schoolId });
+      matchQuery.studentId = { $in: students.map(s => s._id) };
+    }
+
+    if (startDate || endDate) {
+      matchQuery.date = {};
+      if (startDate) matchQuery.date.$gte = startDate;
+      if (endDate) matchQuery.date.$lte = endDate;
+    }
+
+    // Group by period
+    let groupFormat: any = {};
+    if (period === 'day') {
+      groupFormat = { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } };
+    } else if (period === 'month') {
+      groupFormat = { $dateToString: { format: '%Y-%m', date: '$timestamp' } };
+    } else if (period === 'week') {
+      groupFormat = { $dateToString: { format: '%Y-W%V', date: '$timestamp' } };
+    }
+
+    const revenueByPeriod = await Transaction.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: {
+            period: groupFormat,
+            type: '$type'
+          },
+          totalAmount: { $sum: '$amount' },
+          transactionCount: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id.period': 1 } }
+    ]);
+
+    // Separate purchases and top-ups
+    const purchases = revenueByPeriod.filter((r: any) => r._id.type === 'purchase');
+    const topUps = revenueByPeriod.filter((r: any) => r._id.type === 'top-up');
+
+    // Overall totals
+    const totals = await Transaction.aggregate([
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: '$type',
+          totalAmount: { $sum: '$amount' },
+          transactionCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        revenueByPeriod: {
+          purchases: purchases.map((p: any) => ({
+            period: p._id.period,
+            totalRevenue: p.totalAmount,
+            transactionCount: p.transactionCount
+          })),
+          topUps: topUps.map((t: any) => ({
+            period: t._id.period,
+            totalAmount: t.totalAmount,
+            transactionCount: t.transactionCount
+          }))
+        },
+        totals: {
+          purchases: totals.find((t: any) => t._id === 'purchase') || { totalAmount: 0, transactionCount: 0 },
+          topUps: totals.find((t: any) => t._id === 'top-up') || { totalAmount: 0, transactionCount: 0 },
+          netRevenue: (totals.find((t: any) => t._id === 'purchase')?.totalAmount || 0) - 
+                      (totals.find((t: any) => t._id === 'top-up')?.totalAmount || 0)
+        }
+      }
+    });
+
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+}

@@ -15,9 +15,18 @@ import schoolsRoutes from './routes/schools.routes.js';
 import schoolRoutes from './routes/school.routes.js';
 import parentRoutes from './routes/parent.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+// Payment system routes
+import paymentsRoutes from './routes/payments.routes.js';
+import topupRoutes from './routes/topup.routes.js';
+import accountsRoutes from './routes/accounts.routes.js';
+import cardsRoutes from './routes/cards.routes.js';
+import merchantsRoutes from './routes/merchants.routes.js';
+import cardTapRoutes from './routes/cardTap.routes.js';
+import exportRoutes from './routes/export.routes.js';
 
 // Set up Socket.io for attendance notifications
 import { setSocketIO } from './functions/attendance.js';
+import { apiLimiter } from './middleware/rateLimit.middleware.js';
 
 // Create Express app
 const app = express();
@@ -36,10 +45,23 @@ const io = new Server(server, {
 // Set Socket.io for attendance notifications
 setSocketIO(io);
 
+// CORS Configuration
+const corsOptions = {
+  origin: process.env.CORS_ORIGINS 
+    ? process.env.CORS_ORIGINS.split(',').map((origin: string) => origin.trim())
+    : (process.env.NODE_ENV === 'production' ? [] : ['http://localhost:3000', 'http://localhost:5173']),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Apply general rate limiting to all API routes
+app.use('/api', apiLimiter);
 
 // Request logging
 app.use((req, res, next) => {
@@ -58,6 +80,14 @@ app.use('/api/schools', schoolsRoutes);
 app.use('/api/school', schoolRoutes);
 app.use('/api/parent', parentRoutes);
 app.use('/api/admin', adminRoutes);
+// Payment system routes
+app.use('/api/payments', paymentsRoutes);
+app.use('/api/topup', topupRoutes);
+app.use('/api/accounts', accountsRoutes);
+app.use('/api/cards', cardsRoutes);
+app.use('/api/merchants', merchantsRoutes);
+app.use('/api/card', cardTapRoutes); // Unified card tap handler
+app.use('/api/reports/export', exportRoutes); // Export routes
 
 // Health check
 app.get('/health', (req, res) => {

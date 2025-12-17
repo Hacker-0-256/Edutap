@@ -17,10 +17,16 @@ const parentSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true
+    default: ''
   },
   address: {
     type: String
+  },
+  // Link to school
+  schoolId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'School',
+    required: true
   },
   // SMS notification preference
   receiveSMS: {
