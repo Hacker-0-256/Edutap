@@ -1,5 +1,6 @@
 import express from 'express';
 import { recordAttendance, getStudentAttendance, getTodayAttendance } from '../functions/attendance.js';
+import { sendSMS } from '../functions/sms.js';
 
 const router = express.Router();
 
@@ -22,6 +23,34 @@ router.post('/record', async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Attendance recorded successfully',
+      data: result
+    });
+
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Test SMS endpoint
+router.post('/test-sms', async (req, res) => {
+  try {
+    const { phoneNumber, message } = req.body;
+
+    if (!phoneNumber || !message) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide phoneNumber and message'
+      });
+    }
+
+    const result = await sendSMS(phoneNumber, message);
+
+    res.status(200).json({
+      success: true,
+      message: 'SMS test completed',
       data: result
     });
 
