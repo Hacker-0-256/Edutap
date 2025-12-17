@@ -173,13 +173,32 @@ export async function deleteStudent(req: any, res: any) {
 // Create a new parent
 export async function createParent(req: any, res: any) {
   try {
-    const { firstName, lastName, phone, email, address, receiveSMS } = req.body;
+    const { firstName, lastName, phone, email, address, receiveSMS, schoolId } = req.body;
 
     // Simple validation
-    if (!firstName || !lastName || !phone || !email) {
+    if (!firstName || !lastName || !phone || !email || !schoolId) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide all required fields'
+        message: 'Please provide all required fields (firstName, lastName, phone, email, schoolId)'
+      });
+    }
+
+    // Validate school exists
+    const school = await School.findById(schoolId);
+    if (!school) {
+      return res.status(404).json({
+        success: false,
+        message: 'School not found'
+      });
+    }
+
+    // Check if parent with this phone already exists
+    const existingParent = await Parent.findOne({ phone });
+    if (existingParent) {
+      return res.status(400).json({
+        success: false,
+        message: 'Parent with this phone number already exists',
+        data: existingParent
       });
     }
 
@@ -190,7 +209,8 @@ export async function createParent(req: any, res: any) {
       phone,
       email,
       address,
-      receiveSMS
+      schoolId,
+      receiveSMS: receiveSMS !== false // Default to true
     });
 
     res.status(201).json({

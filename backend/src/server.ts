@@ -7,9 +7,34 @@ dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
+// Validate required environment variables
+function validateEnvironment() {
+  const required = ['JWT_SECRET'];
+  const missing: string[] = [];
+
+  required.forEach((key) => {
+    if (!process.env[key] || process.env[key] === 'your-secret-key-change-this-in-production') {
+      missing.push(key);
+    }
+  });
+
+  if (missing.length > 0) {
+    console.error('❌ Missing or invalid required environment variables:');
+    missing.forEach((key) => {
+      console.error(`   - ${key}`);
+    });
+    console.error('\n💡 Please set these in your .env file before starting the server.');
+    console.error('💡 See .env.example for reference.\n');
+    process.exit(1);
+  }
+}
+
 // Start server
 const startServer = async () => {
   try {
+    // Validate environment variables
+    validateEnvironment();
+
     // Connect to database
     await connectDatabase();
 

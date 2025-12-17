@@ -1,18 +1,36 @@
 import express from 'express';
 import { Parent } from '../models/parent.js';
+import { School } from '../models/school.js';
+import { authenticateToken, requireRole } from '../middleware/auth.middleware.js';
+import { validate } from '../middleware/validation.middleware.js';
+import { createParentSchema } from '../validation/schemas.js';
 
 const router = express.Router();
 
-// Create a new parent
-router.post('/', async (req, res) => {
-  try {
-    const { firstName, lastName, phone, email, address, receiveSMS } = req.body;
+// All routes require authentication
+router.use(authenticateToken);
 
-    // Simple validation
-    if (!firstName || !lastName || !phone || !email) {
+// Create a new parent
+router.post('/', requireRole('admin', 'school'), validate(createParentSchema), async (req, res) => {
+  try {
+    const { firstName, lastName, phone, email, address, receiveSMS, schoolId } = req.body;
+
+    // Validate school exists
+    const school = await School.findById(schoolId);
+    if (!school) {
+      return res.status(404).json({
+        success: false,
+        message: 'School not found'
+      });
+    }
+
+    // Check if parent with this phone already exists
+    const existingParent = await Parent.findOne({ phone });
+    if (existingParent) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide firstName, lastName, phone, and email'
+        message: 'Parent with this phone number already exists',
+        data: existingParent
       });
     }
 
@@ -20,8 +38,9 @@ router.post('/', async (req, res) => {
       firstName,
       lastName,
       phone,
-      email,
+      email: email || '',
       address,
+      schoolId,
       receiveSMS: receiveSMS !== undefined ? receiveSMS : true
     });
 
@@ -40,7 +59,7 @@ router.post('/', async (req, res) => {
 });
 
 // Get all parents
-router.get('/', async (req, res) => {
+router.get('/', requireRole('admin', 'school'), async (req, res) => {
   try {
     const parents = await Parent.find({ isActive: true });
 
@@ -59,7 +78,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get a single parent by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireRole('admin', 'school', 'parent'), async (req, res) => {
   try {
     const parent = await Parent.findById(req.params.id);
 
@@ -84,7 +103,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update a parent
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole('admin', 'school', 'parent'), async (req, res) => {
   try {
     const parent = await Parent.findByIdAndUpdate(
       req.params.id,

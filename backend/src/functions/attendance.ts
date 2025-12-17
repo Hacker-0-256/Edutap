@@ -66,48 +66,53 @@ export async function recordAttendance(
     device.stats.successfulScans += 1;
     await device.save();
 
-    // 6. Log successful scan (commented out due to missing logEvent method)
-    // await DeviceLog.logEvent(
-    //   device._id,
-    //   device.schoolId,
-    //   'scan_success',
-    //   `Attendance recorded: ${student.firstName} ${student.lastName} - check-in`,
-    //   {
-    //     cardUID,
-    //     studentId: student._id,
-    //     attendanceId: attendance._id,
-    //     type: 'check-in'
-    //   },
-    //   'low'
-    // );
+    // 6. Log successful scan
+    await DeviceLog.logEvent(
+      device._id,
+      device.schoolId,
+      'scan_success',
+      `Attendance recorded: ${student.firstName} ${student.lastName} - check-in`,
+      {
+        cardUID,
+        studentId: student._id,
+        attendanceId: attendance._id,
+        type: 'check-in'
+      },
+      'low'
+    );
 
     // 7. Get parent information
     const parent = parentData;
 
-    // 8. Send SMS notification to parent (disabled for testing)
-    let smsResult: { success: boolean; error?: string } = { success: true, error: 'SMS disabled for testing' };
+    // 8. Send SMS notification to parent
+    let smsResult: { success: boolean; error?: string } = { success: false };
 
-    // TODO: Re-enable SMS when credentials are properly configured
-    /*
     if (parent && parent.receiveSMS && parent.phone) {
-      // Format time nicely
-      const timeString = now.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
+      try {
+        // Format time nicely
+        const timeString = now.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
 
-      // Create SMS message
-      const message = `Hello ${parent.firstName}, your child ${student.firstName} ${student.lastName} has arrived at school at ${timeString} on ${dateString}. - ${schoolData.name}`;
+        // Create SMS message
+        const message = `Hello ${parent.firstName}, your child ${student.firstName} ${student.lastName} has arrived at school at ${timeString} on ${dateString}. - ${schoolData?.name || 'School'}`;
 
-      // Send SMS
-      const smsResponse = await sendSMS(parent.phone, message);
-      smsResult = {
-        success: smsResponse.success,
-        error: smsResponse.success ? undefined : smsResponse.error
-      };
+        // Send SMS
+        const smsResponse = await sendSMS(parent.phone, message);
+        smsResult = {
+          success: smsResponse.success,
+          error: smsResponse.success ? undefined : smsResponse.error
+        };
+      } catch (smsError: any) {
+        console.error('Error sending SMS notification:', smsError.message);
+        smsResult = {
+          success: false,
+          error: smsError.message
+        };
+      }
     }
-    */
 
     // Update attendance record with SMS status
     attendance.smsNotificationSent = smsResult.success;

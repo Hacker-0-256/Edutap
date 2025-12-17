@@ -17,7 +17,7 @@ const deviceSchema = new mongoose.Schema({
   // Device type and capabilities
   deviceType: {
     type: String,
-    enum: ['esp32', 'rfid_reader'],
+    enum: ['esp32', 'rfid_reader', 'pos', 'canteen_reader', 'attendance_reader'],
     required: true
   },
   capabilities: [{
@@ -75,6 +75,12 @@ const deviceSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'School',
     required: true
+  },
+  
+  // Merchant association (for POS/canteen devices)
+  merchantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Merchant'
   },
 
   // Maintenance and updates

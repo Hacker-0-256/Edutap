@@ -41,6 +41,29 @@ const studentSchema = new mongoose.Schema({
     ref: 'School',
     required: true
   },
+  
+  // Card status management
+  cardStatus: {
+    type: String,
+    enum: ['active', 'lost', 'stolen', 'deactivated', 'expired'],
+    default: 'active'
+  },
+  cardDeactivatedAt: {
+    type: Date
+  },
+  cardDeactivatedReason: {
+    type: String
+  },
+  previousCardUID: {
+    type: String // For tracking card replacements
+  },
+  
+  // Account reference
+  accountId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Account'
+  },
+  
   isActive: {
     type: Boolean,
     default: true
