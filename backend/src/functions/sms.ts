@@ -72,7 +72,9 @@ export async function sendSMS(phoneNumber: string, message: string) {
     
   } catch (error: any) {
     console.error('Error sending SMS:', error.message);
-    return { success: false, error: error.message };
+    const errorDetails = error.response?.data || error.message;
+    console.error('SMS error details:', errorDetails);
+    return { success: false, error: errorDetails };
   }
 }
 
