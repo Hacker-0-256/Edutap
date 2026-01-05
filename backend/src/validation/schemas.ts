@@ -13,9 +13,7 @@ export const registerSchema = z.object({
       .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
       .regex(/[0-9]/, 'Password must contain at least one number')
       .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Password must contain at least one special character'),
-    role: z.enum(['admin', 'school', 'parent'], {
-      errorMap: () => ({ message: 'Role must be admin, school, or parent' })
-    }),
+    role: z.enum(['admin', 'school', 'parent']),
     firstName: z.string().min(1, 'First name is required'),
     lastName: z.string().min(1, 'Last name is required'),
     schoolId: z.string().optional(),
@@ -123,9 +121,7 @@ export const initiateTopUpSchema = z.object({
   body: z.object({
     studentId: z.string().min(1, 'Student ID is required'),
     amount: z.number().positive('Amount must be greater than zero'),
-    paymentMethod: z.enum(['mobile_money', 'bank_transfer', 'cash', 'card', 'other'], {
-      errorMap: () => ({ message: 'Invalid payment method' })
-    })
+    paymentMethod: z.enum(['mobile_money', 'bank_transfer', 'cash', 'card', 'other'])
   })
 });
 
@@ -133,9 +129,7 @@ export const createManualTopUpSchema = z.object({
   body: z.object({
     studentId: z.string().min(1, 'Student ID is required'),
     amount: z.number().positive('Amount must be greater than zero'),
-    paymentMethod: z.enum(['mobile_money', 'bank_transfer', 'cash', 'card', 'other'], {
-      errorMap: () => ({ message: 'Invalid payment method' })
-    }),
+    paymentMethod: z.enum(['mobile_money', 'bank_transfer', 'cash', 'card', 'other']),
     parentId: z.string().optional(),
     paymentReference: z.string().optional()
   })
@@ -175,9 +169,7 @@ export const deactivateCardSchema = z.object({
     cardUID: z.string().min(1, 'Card UID is required')
   }),
   body: z.object({
-    reason: z.enum(['lost', 'stolen', 'other'], {
-      errorMap: () => ({ message: 'Reason must be lost, stolen, or other' })
-    }),
+    reason: z.enum(['lost', 'stolen', 'other']),
     otherReason: z.string().optional()
   })
 });
@@ -241,9 +233,7 @@ export const registerDeviceSchema = z.object({
   body: z.object({
     deviceId: z.string().min(1, 'Device ID is required'),
     name: z.string().min(1, 'Device name is required'),
-    deviceType: z.enum(['esp32', 'rfid_reader', 'pos', 'canteen_reader', 'attendance_reader'], {
-      errorMap: () => ({ message: 'Invalid device type' })
-    }),
+    deviceType: z.enum(['esp32', 'rfid_reader', 'pos', 'canteen_reader', 'attendance_reader']),
     schoolId: z.string().min(1, 'School ID is required'),
     location: z.object({
       zone: z.string().optional(),

@@ -1,6 +1,5 @@
-# Multi-stage build for EduTap Backend
-# Stage 1: Build
-FROM node:18-alpine AS builder
+# Production build for EduTap Backend
+FROM node:18-alpine
 
 WORKDIR /app
 
@@ -8,32 +7,15 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install dependencies
+# Install dependencies (including dev for tsx)
 RUN npm ci
 
 # Copy source code
 COPY src/ ./src/
 
-# Build TypeScript
-RUN npm run build
-
-# Stage 2: Production
-FROM node:18-alpine
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install production dependencies only
-RUN npm ci --only=production
-
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
-
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+  adduser -S nodejs -u 1001
 
 # Change ownership
 RUN chown -R nodejs:nodejs /app
@@ -49,5 +31,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start the application
-CMD ["node", "dist/server.js"]
+CMD ["npx", "tsx", "src/server.ts"]
 

@@ -1,4 +1,4 @@
-import * as csvWriter from 'csv-writer';
+import { createObjectCsvWriter } from 'csv-writer';
 import PDFDocument from 'pdfkit';
 import { Transaction } from '../models/transaction.js';
 import { Attendance } from '../models/attendance.js';
@@ -29,7 +29,7 @@ export async function exportAttendanceToCSV(
 
     // Create CSV writer
     const csvPath = `/tmp/attendance_${Date.now()}.csv`;
-    const writer = csvWriter.default.createObjectCsvWriter({
+    const writer = createObjectCsvWriter({
       path: csvPath,
       header: [
         { id: 'date', title: 'Date' },
@@ -103,7 +103,7 @@ export async function exportTransactionsToCSV(
       .populate('accountId');
 
     const csvPath = `/tmp/transactions_${Date.now()}.csv`;
-    const writer = csvWriter.default.createObjectCsvWriter({
+    const writer = createObjectCsvWriter({
       path: csvPath,
       header: [
         { id: 'date', title: 'Date' },
@@ -184,7 +184,7 @@ export async function exportSalesToCSV(
       .populate('merchantId', 'name type');
 
     const csvPath = `/tmp/sales_${Date.now()}.csv`;
-    const writer = csvWriter.default.createObjectCsvWriter({
+    const writer = createObjectCsvWriter({
       path: csvPath,
       header: [
         { id: 'date', title: 'Date' },
