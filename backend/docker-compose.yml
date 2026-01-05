@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MongoDB Database
   mongodb:
@@ -32,30 +30,30 @@ services:
     container_name: edutap-backend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       # Server
       - PORT=3000
       - NODE_ENV=production
-      
+
       # Database
       - MONGODB_URI=mongodb://mongodb:27017/school-attendance
-      
+
       # JWT (REQUIRED - Set in production)
       - JWT_SECRET=${JWT_SECRET:-change-this-secret-key}
-      
+
       # SMS Configuration (Africa's Talking)
       - AFRICAS_TALKING_API_KEY=${AFRICAS_TALKING_API_KEY:-}
       - AFRICAS_TALKING_USERNAME=${AFRICAS_TALKING_USERNAME:-}
-      
+
       # SMS Configuration (Twilio - Alternative)
       - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
       - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
       - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER:-}
-      
+
       # CORS
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
-      
+
       # Logging
       - LOG_LEVEL=${LOG_LEVEL:-info}
     depends_on:
@@ -68,7 +66,13 @@ services:
       # - ./.env:/app/.env:ro
       - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -83,4 +87,3 @@ volumes:
 networks:
   edutap-network:
     driver: bridge
-

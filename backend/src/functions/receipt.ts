@@ -98,7 +98,7 @@ export async function generatePaymentReceipt(transactionId: string): Promise<Buf
     doc.moveDown(0.5);
     doc.text('This is an automated receipt. Please keep it for your records.', { align: 'center' });
     doc.moveDown(1);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, { align: 'center', fontSize: 8 });
+    doc.fontSize(8).text(`Generated on: ${new Date().toLocaleString()}`, { align: 'center' });
 
     doc.end();
 
