@@ -60,6 +60,14 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files (student photos)
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
 // Apply general rate limiting to all API routes
 app.use('/api', apiLimiter);
 
@@ -88,6 +96,35 @@ app.use('/api/cards', cardsRoutes);
 app.use('/api/merchants', merchantsRoutes);
 app.use('/api/card', cardTapRoutes); // Unified card tap handler
 app.use('/api/reports/export', exportRoutes); // Export routes
+
+// Root route - API information
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'EduTap API Server',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      api: '/api',
+      documentation: 'See API_DOCUMENTATION.md for full API reference'
+    },
+    availableRoutes: [
+      '/api/auth - Authentication endpoints',
+      '/api/attendance - Attendance management',
+      '/api/students - Student management',
+      '/api/parents - Parent management',
+      '/api/devices - IoT device management',
+      '/api/payments - Payment processing',
+      '/api/topup - Top-up management',
+      '/api/accounts - Account management',
+      '/api/cards - Card management',
+      '/api/merchants - Merchant management',
+      '/api/admin - Admin dashboard',
+      '/api/reports/export - Report exports'
+    ],
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Health check
 app.get('/health', (req, res) => {

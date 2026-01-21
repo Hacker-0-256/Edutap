@@ -67,7 +67,7 @@ export async function recordAttendance(
     await device.save();
 
     // 6. Log successful scan
-    await DeviceLog.logEvent(
+    await (DeviceLog as any).logEvent(
       device._id,
       device.schoolId,
       'scan_success',
@@ -143,6 +143,9 @@ export async function recordAttendance(
       });
     }
 
+    // Get photo URL helper
+    const { getPhotoUrl } = await import('../middleware/upload.middleware.js');
+    
     return {
       success: true,
       attendance: {
@@ -151,6 +154,13 @@ export async function recordAttendance(
         type: attendance.type,
         timestamp: attendance.timestamp,
         location: attendance.deviceLocation
+      },
+      student: {
+        id: student._id,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        studentId: student.studentId,
+        photo: getPhotoUrl(student.photo) // Include photo URL
       },
       smsNotification: {
         sent: smsResult.success,

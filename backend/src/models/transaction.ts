@@ -117,7 +117,7 @@ transactionSchema.index({ merchantId: 1, timestamp: -1 });
 transactionSchema.index({ date: 1 });
 transactionSchema.index({ type: 1, timestamp: -1 });
 transactionSchema.index({ status: 1 });
-transactionSchema.index({ reference: 1 }); // Unique index for idempotency
+// Note: reference already has unique: true which creates an index
 
 // Static method to create purchase transaction
 transactionSchema.statics.createPurchase = async function(

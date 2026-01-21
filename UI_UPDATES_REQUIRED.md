@@ -1,7 +1,9 @@
 # UI Updates Required for Backend Changes
 
 ## Summary
-The backend now uses a unified student registration endpoint that automatically creates/links parents. The UI needs to be updated to match this new flow.
+The backend now uses a unified student registration endpoint that automatically creates/links parents. Additionally, **student photo feature** has been added for identity verification at payment points. The UI needs to be updated to match these new features.
+
+> **📸 NEW:** See `UI_PHOTO_FEATURE_UPDATES.md` for complete photo feature implementation guide.
 
 ---
 
@@ -332,4 +334,10 @@ After implementing UI updates, test:
 - [ ] Multiple students registration
 - [ ] Parent creation with schoolId
 - [ ] Form validation (all required fields)
+
+
+
+
+
+
 

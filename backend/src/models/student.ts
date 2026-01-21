@@ -64,6 +64,15 @@ const studentSchema = new mongoose.Schema({
     ref: 'Account'
   },
   
+  // Student photo (optional)
+  photo: {
+    type: String, // URL or file path to the photo
+    default: null
+  },
+  photoUpdatedAt: {
+    type: Date
+  },
+  
   isActive: {
     type: Boolean,
     default: true

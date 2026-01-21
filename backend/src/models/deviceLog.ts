@@ -7,6 +7,8 @@ const deviceLogSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Device',
     required: true
+    // Note: Mongoose auto-indexes required ObjectId refs
+    // We also have a compound index, which is fine - both will work
   },
 
   // Event details
@@ -71,8 +73,7 @@ const deviceLogSchema = new mongoose.Schema({
   // Timestamps
   timestamp: {
     type: Date,
-    default: Date.now,
-    index: true
+    default: Date.now
   },
 
   // School reference for partitioning
@@ -82,11 +83,14 @@ const deviceLogSchema = new mongoose.Schema({
     required: true
   }
 }, {
-  timestamps: false // We use custom timestamp field
+  timestamps: false, // We use custom timestamp field
+  autoIndex: true // Allow auto-indexing but we'll manage duplicates
 });
 
 // Indexes for performance and querying
-deviceLogSchema.index({ deviceId: 1, timestamp: -1 });
+// Note: deviceId is auto-indexed by Mongoose (required ObjectId ref)
+// We create compound index which includes deviceId, so the single index is redundant but harmless
+deviceLogSchema.index({ deviceId: 1, timestamp: -1 }, { background: true });
 deviceLogSchema.index({ schoolId: 1, timestamp: -1 });
 deviceLogSchema.index({ eventType: 1, timestamp: -1 });
 deviceLogSchema.index({ severity: 1, timestamp: -1 });

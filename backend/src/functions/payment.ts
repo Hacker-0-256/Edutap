@@ -16,7 +16,8 @@ export async function validateBalance(studentId: string, amount: number) {
       throw new Error('Account not found or inactive');
     }
     
-    if (!account.hasSufficientBalance(amount)) {
+    // Check balance directly
+    if (account.balance < amount) {
       return {
         valid: false,
         balance: account.balance,
@@ -44,15 +45,20 @@ export async function deductBalance(studentId: string, amount: number) {
       throw new Error('Account not found or inactive');
     }
     
-    if (!account.hasSufficientBalance(amount)) {
+    // Check balance directly
+    if (account.balance < amount) {
       throw new Error(`Insufficient balance. Available: ${account.balance}, Required: ${amount}`);
     }
     
-    await account.deductBalance(amount);
+    // Use the model method (it saves internally)
+    await (account as any).deductBalance(amount);
+    
+    // Reload to get updated balance
+    const updatedAccount = await Account.findById(account._id);
     
     return {
       success: true,
-      newBalance: account.balance,
+      newBalance: updatedAccount?.balance || account.balance,
       amountDeducted: amount
     };
   } catch (error: any) {
@@ -69,11 +75,15 @@ export async function addBalance(studentId: string, amount: number, method?: str
       throw new Error('Account not found or inactive');
     }
     
-    await account.addBalance(amount, method);
+    // Use the model method
+    await (account as any).addBalance(amount, method);
+    
+    // Reload to get updated balance
+    const updatedAccount = await Account.findById(account._id);
     
     return {
       success: true,
-      newBalance: account.balance,
+      newBalance: updatedAccount?.balance || account.balance,
       amountAdded: amount
     };
   } catch (error: any) {
@@ -140,7 +150,7 @@ export async function processPayment(
     const balanceCheck = await validateBalance(student._id.toString(), amount);
     if (!balanceCheck.valid) {
       // Log failed transaction
-      await DeviceLog.logEvent(
+      await (DeviceLog as any).logEvent(
         device._id,
         device.schoolId,
         'scan_failure',
@@ -193,7 +203,7 @@ export async function processPayment(
     }
 
     // 9. Create transaction (this will deduct balance)
-    const transaction = await Transaction.createPurchase(
+    const transaction = await (Transaction as any).createPurchase(
       student._id,
       account._id,
       amount,
@@ -204,7 +214,7 @@ export async function processPayment(
     );
     
     // 10. Update merchant sales statistics
-    await merchant.updateSales(amount);
+    await (merchant as any).updateSales(amount);
     
     // 11. Update device statistics
     if (!device.stats) {
@@ -221,7 +231,7 @@ export async function processPayment(
     await device.save();
     
     // 12. Log successful transaction
-    await DeviceLog.logEvent(
+    await (DeviceLog as any).logEvent(
       device._id,
       device.schoolId,
       'scan_success',
@@ -264,6 +274,9 @@ export async function processPayment(
       };
     }
     
+    // Get photo URL helper
+    const { getPhotoUrl } = await import('../middleware/upload.middleware.js');
+    
     return {
       success: true,
       transaction: {
@@ -274,13 +287,21 @@ export async function processPayment(
         timestamp: transaction.timestamp
       },
       student: {
+        id: student._id,
         name: `${student.firstName} ${student.lastName}`,
-        studentId: student.studentId
+        firstName: student.firstName,
+        lastName: student.lastName,
+        studentId: student.studentId,
+        grade: student.grade,
+        class: student.class,
+        photo: getPhotoUrl(student.photo), // Include photo URL
+        accountBalance: transaction.balanceAfter
       },
       merchant: {
         name: merchant.name,
         type: merchant.type
-      }
+      },
+      newBalance: transaction.balanceAfter
     };
     
   } catch (error: any) {

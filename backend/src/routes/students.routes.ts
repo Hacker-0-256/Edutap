@@ -8,6 +8,7 @@ import {
 import { authenticateToken, requireRole } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validation.middleware.js';
 import { registerStudentWithParentSchema } from '../validation/schemas.js';
+import { uploadPhoto, getPhotoUrl, deletePhotoFile } from '../middleware/upload.middleware.js';
 
 const router = express.Router();
 
@@ -145,6 +146,101 @@ router.put('/:id', requireRole('admin', 'school'), async (req, res) => {
       success: true,
       message: 'Student updated successfully',
       data: student
+    });
+
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Upload/Update student photo
+router.post('/:id/photo', requireRole('admin', 'school'), uploadPhoto.single('photo'), async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    
+    if (!student) {
+      // Delete uploaded file if student not found
+      if (req.file) {
+        deletePhotoFile(req.file.filename);
+      }
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No photo file provided'
+      });
+    }
+
+    // Delete old photo if exists
+    if (student.photo) {
+      deletePhotoFile(student.photo);
+    }
+
+    // Update student with new photo
+    student.photo = req.file.filename;
+    student.photoUpdatedAt = new Date();
+    await student.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Student photo uploaded successfully',
+      data: {
+        studentId: student._id,
+        photo: getPhotoUrl(student.photo),
+        photoUpdatedAt: student.photoUpdatedAt
+      }
+    });
+
+  } catch (error: any) {
+    // Delete uploaded file on error
+    if (req.file) {
+      deletePhotoFile(req.file.filename);
+    }
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+// Delete student photo
+router.delete('/:id/photo', requireRole('admin', 'school'), async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
+    }
+
+    if (!student.photo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Student has no photo to delete'
+      });
+    }
+
+    // Delete photo file
+    deletePhotoFile(student.photo);
+
+    // Remove photo reference from student
+    student.photo = null;
+    student.photoUpdatedAt = undefined;
+    await student.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Student photo deleted successfully'
     });
 
   } catch (error: any) {

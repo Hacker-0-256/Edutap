@@ -241,7 +241,7 @@ const sampleData = {
         room: "Canteen",
         zone: "canteen"
       },
-      capabilities: ["rfid", "payment"],
+      capabilities: ["rfid", "nfc"],
       schoolIndex: 0,
       merchantIndex: 0
     },
@@ -255,7 +255,7 @@ const sampleData = {
         room: "Canteen",
         zone: "canteen"
       },
-      capabilities: ["rfid", "payment"],
+      capabilities: ["rfid", "nfc"],
       schoolIndex: 1,
       merchantIndex: 1
     }

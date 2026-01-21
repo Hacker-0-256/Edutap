@@ -82,14 +82,7 @@ export async function registerStudentWithParent(
       await parent.save();
     }
 
-    // 4. Create student account
-    const account = await Account.create({
-      studentId: null, // Will be updated after student creation
-      balance: studentData.initialBalance || 0,
-      currency: 'RWF'
-    });
-
-    // 5. Create student
+    // 4. Create student first (without accountId initially)
     const student = await Student.create({
       firstName: studentData.firstName,
       lastName: studentData.lastName,
@@ -99,13 +92,19 @@ export async function registerStudentWithParent(
       class: studentData.class,
       parentId: parent._id,
       schoolId: studentData.schoolId,
-      accountId: account._id,
       cardStatus: 'active'
     });
 
-    // 6. Update account with student reference
-    account.studentId = student._id;
-    await account.save();
+    // 5. Create student account with student reference
+    const account = await Account.create({
+      studentId: student._id,
+      balance: studentData.initialBalance || 0,
+      currency: 'RWF'
+    });
+
+    // 6. Update student with account reference
+    student.accountId = account._id;
+    await student.save();
 
     // 7. Send welcome SMS to parent
     let smsResult: { success: boolean; error?: string } = { success: false };
@@ -127,6 +126,9 @@ export async function registerStudentWithParent(
       }
     }
 
+    // Get photo URL helper
+    const { getPhotoUrl } = await import('../middleware/upload.middleware.js');
+    
     return {
       success: true,
       student: {
@@ -137,7 +139,8 @@ export async function registerStudentWithParent(
         cardUID: student.cardUID,
         grade: student.grade,
         class: student.class,
-        accountBalance: account.balance
+        accountBalance: account.balance,
+        photo: getPhotoUrl(student.photo) // Include photo URL (null if not set)
       },
       parent: {
         id: parent._id,
@@ -206,4 +209,7 @@ export async function registerMultipleStudentsWithParent(
     throw new Error(`Multiple student registration failed: ${error.message}`);
   }
 }
+
+
+
 

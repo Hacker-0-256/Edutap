@@ -1,11 +1,13 @@
 import dotenv from 'dotenv';
+import { execSync } from 'child_process';
 import { server, io } from './app.js';
 import { connectDatabase } from './database.js';
 
 // Load environment variables
-dotenv.config();
+// Load from backend/.env (current directory when running from backend/)
+dotenv.config({ path: '.env' });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5001;
 
 // Validate required environment variables
 function validateEnvironment() {
@@ -13,7 +15,12 @@ function validateEnvironment() {
   const missing: string[] = [];
 
   required.forEach((key) => {
-    if (!process.env[key] || process.env[key] === 'your-secret-key-change-this-in-production') {
+    const value = process.env[key];
+    // Check if missing or matches any placeholder variant
+    if (!value || 
+        value === 'your-secret-key-change-this-in-production' ||
+        value === 'your-super-secret-jwt-key-change-this-in-production' ||
+        value.trim().length < 10) {
       missing.push(key);
     }
   });
@@ -39,7 +46,7 @@ const startServer = async () => {
     await connectDatabase();
 
     // Start the server with Socket.io
-    server.listen(PORT, () => {
+    const serverInstance = server.listen(PORT, () => {
       console.log(`
 🚀 IoT School Attendance System Started!
 📍 Port: ${PORT}
@@ -48,6 +55,17 @@ const startServer = async () => {
 🔌 WebSocket: ws://localhost:${PORT}
 📡 IoT Devices: Ready for connections
       `);
+    });
+
+    serverInstance.on('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`❌ Port ${PORT} is already in use.`);
+        console.error(`💡 Please change the PORT in your .env file or kill the process using port ${PORT}`);
+        console.error(`💡 To kill: lsof -ti:${PORT} | xargs kill -9`);
+        process.exit(1);
+      } else {
+        throw err;
+      }
     });
   } catch (error: any) {
     console.error('❌ Failed to start server:', error.message);

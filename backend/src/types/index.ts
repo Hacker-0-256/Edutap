@@ -673,3 +673,11 @@ export interface ISuccessResponse<T = any> {
 
 export type ApiResponse<T = any> = ISuccessResponse<T> | IErrorResponse;
 
+
+
+
+
+
+
+
+

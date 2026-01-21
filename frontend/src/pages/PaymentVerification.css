@@ -1,0 +1,66 @@
+.payment-verification-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 200px);
+  padding: 24px;
+}
+
+.verification-card {
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.verification-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.student-identity-section {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.photo-container {
+  display: flex;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.student-info {
+  margin-top: 16px;
+}
+
+.transaction-details-section {
+  margin: 24px 0;
+}
+
+.transaction-info {
+  margin-top: 16px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.verification-actions {
+  display: flex;
+  justify-content: center;
+  margin: 32px 0 16px;
+}
+
+.verification-note {
+  text-align: center;
+  margin-top: 16px;
+}
+
+

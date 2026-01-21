@@ -1,6 +1,6 @@
 # 🎨 EduTap Admin Dashboard - Complete UI Specification
 
-> **📋 IMPORTANT**: This specification has been updated to match the new backend registration system. See `UI_UPDATES_REQUIRED.md` for detailed implementation changes and migration guide.
+> **📋 IMPORTANT**: This specification has been updated to match the new backend registration system and includes the **student photo feature** for identity verification. See `UI_UPDATES_REQUIRED.md` and `UI_PHOTO_FEATURE_UPDATES.md` for detailed implementation changes and migration guide.
 
 ## Table of Contents
 1. [Layout Structure](#layout-structure)
@@ -11,6 +11,7 @@
 6. [Attendance Monitoring](#5-attendance-monitoring)
 7. [Attendance History](#6-attendance-history)
 8. [Payments & Transactions](#7-payments--transactions)
+7.5. [Payment Verification Screen](#75-payment-verification-screen-new---critical-feature)
 9. [Transaction Details](#8-transaction-details)
 10. [Account Balances](#9-account-balances)
 11. [Account Details](#10-account-details)
@@ -295,19 +296,19 @@
 ├─────────────────────────────────────────────────────────┤
 │                                                          │
 │  ┌──────────────────────────────────────────────────┐  │
-│  │ Name          │ ID   │ Grade│ Card    │ Balance │ │
-│  ├────────────────┼──────┼──────┼────────┼─────────┤ │
-│  │ John Doe      │ ST001│ 5A   │ ✅     │ 2,500   │ │
-│  │               │      │      │ Active │ RWF     │ │
-│  ├────────────────┼──────┼──────┼────────┼─────────┤ │
-│  │ Mary Smith    │ ST002│ 5B   │ ✅     │ 1,200   │ │
-│  │               │      │      │ Active │ RWF     │ │
-│  ├────────────────┼──────┼──────┼────────┼─────────┤ │
-│  │ Peter Jones   │ ST003│ 6A   │ ⚠️     │ 0       │ │
-│  │               │      │      │ Lost   │ RWF     │ │
-│  ├────────────────┼──────┼──────┼────────┼─────────┤ │
-│  │ Alice Brown   │ ST004│ 4B   │ ✅     │ 3,000   │ │
-│  │               │      │      │ Active │ RWF     │ │
+│  │ Photo│ Name      │ ID   │ Grade│ Card    │ Balance│ │
+│  ├──────┼───────────┼──────┼──────┼────────┼────────┤ │
+│  │ [📷] │ John Doe  │ ST001│ 5A   │ ✅     │ 2,500  │ │
+│  │      │           │      │      │ Active │ RWF    │ │
+│  ├──────┼───────────┼──────┼──────┼────────┼────────┤ │
+│  │ [👤] │ Mary Smith│ ST002│ 5B   │ ✅     │ 1,200  │ │
+│  │      │           │      │      │ Active │ RWF    │ │
+│  ├──────┼───────────┼──────┼──────┼────────┼────────┤ │
+│  │ [👤] │ Peter Jones│ ST003│ 6A   │ ⚠️     │ 0      │ │
+│  │      │           │      │      │ Lost   │ RWF    │ │
+│  ├──────┼───────────┼──────┼──────┼────────┼────────┤ │
+│  │ [📷] │ Alice Brown│ ST004│ 4B   │ ✅     │ 3,000  │ │
+│  │      │           │      │      │ Active │ RWF    │ │
 │  └──────────────────────────────────────────────────┘  │
 │                                                          │
 │  Showing 1-20 of 245 students  [< Previous] [Next >]  │
@@ -353,23 +354,29 @@
 
 #### **Students Table**
 **Columns:**
-1. **Name** (Sortable)
+1. **Photo** (First column)
+   - Student photo thumbnail (50x50px, circular)
+   - Click: View full-size photo
+   - Fallback: Default avatar with initials if no photo
+   - Shows [📷] icon if photo exists, [👤] if no photo
+
+2. **Name** (Sortable)
    - Student full name
    - Click: View student details
 
-2. **Student ID** (Sortable)
+3. **Student ID** (Sortable)
    - Unique student identifier
    - Monospace font
 
-3. **Grade** (Filterable)
+4. **Grade** (Filterable)
    - Student grade level
    - Badge style
 
-4. **Class** (Filterable)
+5. **Class** (Filterable)
    - Student class
    - Badge style
 
-5. **Card Status** (Filterable)
+6. **Card Status** (Filterable)
    - Status badge:
      - ✅ Green: Active
      - ⚠️ Yellow: Lost
@@ -377,12 +384,12 @@
      - ⚫ Gray: Deactivated
    - Click: Manage card
 
-6. **Balance** (Sortable)
+7. **Balance** (Sortable)
    - Account balance in RWF
    - Format: "X,XXX RWF"
    - Low balance highlighted in orange
 
-7. **Actions** (Always last column)
+8. **Actions** (Always last column)
    - Three dots menu (⋮)
    - Options:
      - View Details
@@ -390,6 +397,7 @@
      - Manage Card
      - View Transactions
      - View Attendance
+     - Upload/Change Photo
      - Deactivate
 
 #### **Table Features:**
@@ -493,6 +501,24 @@
 │  └──────────────────────────────────────────────────┘  │
 │                                                          │
 │  ┌──────────────────────────────────────────────────┐  │
+│  │  Student Photo (Optional)                        │  │
+│  │  ℹ️ Recommended for identity verification        │  │
+│  │                                                  │  │
+│  │  ┌──────────────┐                                │  │
+│  │  │              │                                │  │
+│  │  │   [Photo]    │  ← Preview area (200x200px)   │  │
+│  │  │   Preview     │                                │  │
+│  │  │              │                                │  │
+│  │  └──────────────┘                                │  │
+│  │                                                  │  │
+│  │  [📷 Upload Photo]  [🗑️ Remove] (if photo exists)│  │
+│  │                                                  │  │
+│  │  Accepted: JPG, PNG, GIF, WebP                  │  │
+│  │  Max size: 5MB                                   │  │
+│  │  ℹ️ Photo will be used for payment verification   │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
 │  │  [Cancel]              [Register Student]        │  │
 │  └──────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
@@ -527,6 +553,20 @@
    - Scan Card button (if RFID reader available)
    - Checkbox: Create account with initial balance
    - Initial balance input (if checked, in RWF)
+
+4. **Student Photo** (Optional but Recommended)
+   - Photo preview area (200x200px, circular or rounded square)
+   - "Upload Photo" button
+   - "Remove Photo" button (if photo exists)
+   - File input (hidden, triggered by button)
+   - Accepted formats: JPG, PNG, GIF, WebP
+   - Max file size: 5MB
+   - Info text: "Photo is optional but recommended for identity verification at payment points"
+   - **Note**: Photo can be uploaded during registration or added later
+   - **Upload Flow**:
+     - First: Submit student registration
+     - Then: Upload photo to `/api/students/{studentId}/photo` (if photo selected)
+     - Show progress: "Registering student..." → "Uploading photo..." → "Complete"
 
 #### **Backend Integration:**
 - **Endpoint**: `POST /api/students/register`
@@ -583,6 +623,14 @@ After successful registration, show:
   - Opens expanded form to register 2+ students with same parent
   - Uses `/api/students/register-multiple` endpoint
   - Shows parent info once, multiple student forms below
+
+- **Photo Management** (for Edit Student form)
+  - Show current photo (if exists) in preview area
+  - "Change Photo" button to upload new photo
+  - "Delete Photo" button to remove photo
+  - Upload endpoint: `POST /api/students/{id}/photo`
+  - Delete endpoint: `DELETE /api/students/{id}/photo`
+  - Photo updates immediately after upload
 
 ---
 
@@ -876,6 +924,148 @@ After successful registration, show:
 
 ---
 
+## 7.5. Payment Verification Screen (NEW - Critical Feature)
+
+### Modal/Overlay Layout
+```
+┌─────────────────────────────────────────────────────────┐
+│  PAYMENT VERIFICATION                        [✕ Close] │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  Student Identity Verification                   │  │
+│  │                                                  │  │
+│  │  ┌──────────────┐                                 │  │
+│  │  │              │                                 │  │
+│  │  │  [STUDENT]   │  ← Large photo (300x300px)     │  │
+│  │  │    PHOTO     │     (circular or rounded)       │  │
+│  │  │              │                                 │  │
+│  │  └──────────────┘                                 │  │
+│  │                                                  │  │
+│  │  Student: Alice Johnson                         │  │
+│  │  Student ID: STU002                              │  │
+│  │  Grade: 6 - Class: B                             │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  Transaction Details                             │  │
+│  │                                                  │  │
+│  │  Amount: 500 RWF                                 │  │
+│  │  Current Balance: 2,000 RWF                      │  │
+│  │  New Balance: 1,500 RWF                          │  │
+│  │                                                  │  │
+│  │  Merchant: Main Canteen                          │  │
+│  │  Location: Main Canteen                          │  │
+│  │  Time: 10:30 AM                                  │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  [✓ Confirm Payment]  [✗ Cancel]                 │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                          │
+│  ℹ️ Verify student identity before confirming payment   │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Features:
+
+#### **When This Screen Appears:**
+- **Trigger**: Student taps card at POS/canteen payment device
+- **Backend**: Processes payment and returns student data with photo
+- **Frontend**: Displays verification screen automatically
+- **Purpose**: Allow canteen staff to verify card owner identity
+
+#### **Student Photo Display:**
+- **Size**: 300x300px (large, for clear identification)
+- **Shape**: Circular or rounded square
+- **Position**: Centered, prominent
+- **Fallback**: Default avatar with student initials if no photo
+- **Source**: From API response `student.photo` field
+- **URL Construction**: `${API_BASE_URL}${student.photo}`
+
+#### **Student Information:**
+- Student full name (large, prominent)
+- Student ID
+- Grade and Class
+- **Purpose**: Additional verification details
+
+#### **Transaction Details:**
+- Transaction amount (prominent)
+- Current account balance
+- New balance after transaction
+- Merchant name
+- Device location
+- Timestamp
+
+#### **Staff Actions:**
+1. **Confirm Payment** (Primary button, green)
+   - Staff verifies identity matches photo
+   - Completes the transaction
+   - Shows success message
+   - Closes screen after 2 seconds
+
+2. **Cancel** (Secondary button, red)
+   - Aborts the transaction
+   - Returns to ready state
+   - No payment processed
+
+#### **Screen States:**
+- **Loading**: Show spinner while processing card tap
+- **Verification**: Display photo and details (waiting for staff confirmation)
+- **Success**: Show success message, auto-close after 2 seconds
+- **Error**: Show error message (insufficient balance, card inactive, etc.)
+
+#### **Backend Integration:**
+- **Endpoint**: `POST /api/card/tap`
+- **Request**:
+  ```json
+  {
+    "cardUID": "CARD789012",
+    "deviceId": "pos-canteen-001",
+    "deviceLocation": "Main Canteen",
+    "amount": 500,
+    "description": "Lunch purchase"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "data": {
+        "student": {
+          "photo": "/uploads/students/student-1234567890-abc123.jpg",
+          "name": "Alice Johnson",
+          "studentId": "STU002",
+          "grade": "6",
+          "class": "B",
+          "accountBalance": 1500
+        },
+        "transaction": {
+          "amount": 500,
+          "balanceAfter": 1500
+        }
+      }
+    }
+  }
+  ```
+
+#### **Implementation Notes:**
+- **Photo URL**: Always prepend API base URL to photo path
+- **Error Handling**: Show default avatar if photo fails to load
+- **Accessibility**: Alt text for images, keyboard navigation
+- **Responsive**: Adapts to different screen sizes
+- **Real-time**: Updates immediately when card is tapped
+
+#### **UX Considerations:**
+- **Large Photo**: Easy to see and verify identity
+- **Clear Information**: All details visible at once
+- **Quick Actions**: Large, easy-to-click buttons
+- **Visual Feedback**: Loading states, success animations
+- **Error Messages**: Clear, actionable error messages
+
+---
+
 ## 8. Transaction Details
 
 ### Modal/Page Layout
@@ -900,6 +1090,10 @@ After successful registration, show:
 │                                                          │
 │  ┌──────────────────────────────────────────────────┐  │
 │  │  Student Information                             │  │
+│  │                                                  │  │
+│  │  ┌──────────┐                                   │  │
+│  │  │  [Photo] │  ← Student photo (150x150px)      │  │
+│  │  └──────────┘                                   │  │
 │  │                                                  │  │
 │  │  Name: John Doe                                  │  │
 │  │  Student ID: ST001                               │  │
@@ -934,6 +1128,10 @@ After successful registration, show:
 - Device ID
 
 #### **Student Information**
+- **Student Photo** (150x150px, circular)
+  - Display photo if available
+  - Fallback to default avatar if no photo
+  - Click to view full-size photo
 - Student name
 - Student ID
 - Grade/Class
@@ -2404,3 +2602,24 @@ After successful registration, show:
 
 **Last Updated**: 2024  
 **Status**: Complete UI specification for all screens
+
+---
+
+## 📸 Photo Feature Summary
+
+The student photo feature has been integrated throughout the UI:
+
+1. **Student Registration**: Optional photo upload during registration
+2. **Student List**: Photo thumbnail column (50x50px)
+3. **Student Profile**: Large photo display (200x200px) with upload/delete options
+4. **Payment Verification Screen**: Large photo (300x300px) for identity verification at POS/canteen
+5. **Transaction Details**: Student photo (150x150px) in transaction view
+
+**Key Implementation Points:**
+- Photos are optional but recommended
+- Photo URL format: `${API_BASE_URL}${student.photo}`
+- Default avatar fallback if no photo
+- Photo management: Upload, Update, Delete endpoints available
+- Payment verification screen is the primary use case for photos
+
+See `UI_PHOTO_FEATURE_UPDATES.md` for complete implementation guide.

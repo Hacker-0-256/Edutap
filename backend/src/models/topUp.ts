@@ -98,8 +98,7 @@ topUpSchema.index({ studentId: 1, createdAt: -1 });
 topUpSchema.index({ parentId: 1, createdAt: -1 });
 topUpSchema.index({ accountId: 1 });
 topUpSchema.index({ status: 1 });
-topUpSchema.index({ topUpReference: 1 }); // Unique index
-topUpSchema.index({ paymentReference: 1 }); // Sparse unique index
+// Note: topUpReference and paymentReference already have unique: true which creates indexes
 
 // Method to mark as processing
 topUpSchema.methods.markAsProcessing = function() {

@@ -1,0 +1,127 @@
+### EduTap Backend API Tests
+### Use REST Client extension in VS Code or similar
+
+@baseUrl = http://localhost:5001/api
+@token = YOUR_TOKEN_HERE
+
+### Health Check
+GET http://localhost:5001/health
+
+### Register Admin User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@admin.com",
+  "password": "Test123!@#",
+  "role": "admin",
+  "firstName": "Test",
+  "lastName": "Admin"
+}
+
+### Login (Seeded Admin)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@school.edu",
+  "password": "admin123"
+}
+
+### Get Schools
+GET {{baseUrl}}/schools
+Authorization: Bearer {{token}}
+
+### Get Students
+GET {{baseUrl}}/students
+Authorization: Bearer {{token}}
+
+### Register Student with Parent
+POST {{baseUrl}}/students/register
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "firstName": "Test",
+  "lastName": "Student",
+  "studentId": "TEST001",
+  "cardUID": "TEST123456789",
+  "grade": "5",
+  "class": "A",
+  "schoolId": "REPLACE_WITH_SCHOOL_ID",
+  "initialBalance": 1000,
+  "parentFirstName": "Test",
+  "parentLastName": "Parent",
+  "parentPhone": "+250788123456",
+  "parentEmail": "test.parent@email.com",
+  "parentReceiveSMS": true
+}
+
+### Card Tap - Attendance
+POST {{baseUrl}}/card/tap
+Content-Type: application/json
+
+{
+  "cardUID": "ABC123456789",
+  "deviceId": "rfid-gate-001",
+  "deviceLocation": "Main Entrance"
+}
+
+### Card Tap - Payment
+POST {{baseUrl}}/card/tap
+Content-Type: application/json
+
+{
+  "cardUID": "ABC123456789",
+  "deviceId": "pos-canteen-001",
+  "deviceLocation": "Main Canteen",
+  "amount": 500,
+  "description": "Lunch purchase"
+}
+
+### Manual Top-up
+POST {{baseUrl}}/topup/manual
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "studentId": "REPLACE_WITH_STUDENT_ID",
+  "amount": 5000,
+  "paymentMethod": "cash"
+}
+
+### Get Account Balance
+GET {{baseUrl}}/accounts/student/REPLACE_WITH_STUDENT_ID/balance
+Authorization: Bearer {{token}}
+
+### Get Transaction History
+GET {{baseUrl}}/payments/student/REPLACE_WITH_STUDENT_ID/history
+Authorization: Bearer {{token}}
+
+### Get Payment Receipt (PDF)
+GET {{baseUrl}}/payments/REPLACE_WITH_TRANSACTION_ID/receipt
+Authorization: Bearer {{token}}
+
+### Admin - Get All Transactions
+GET {{baseUrl}}/admin/transactions?limit=10&page=1
+Authorization: Bearer {{token}}
+
+### Admin - Get Sales Analytics
+GET {{baseUrl}}/admin/sales?startDate=2024-01-01&endDate=2024-01-31
+Authorization: Bearer {{token}}
+
+### Admin - Get Account Summaries
+GET {{baseUrl}}/admin/accounts?schoolId=REPLACE_WITH_SCHOOL_ID
+Authorization: Bearer {{token}}
+
+### Export Attendance (CSV)
+GET {{baseUrl}}/../reports/export/attendance?format=csv&startDate=2024-01-01&endDate=2024-01-31
+Authorization: Bearer {{token}}
+
+### Export Transactions (PDF)
+GET {{baseUrl}}/../reports/export/transactions?format=pdf&startDate=2024-01-01&endDate=2024-01-31
+Authorization: Bearer {{token}}
+
+
+
+

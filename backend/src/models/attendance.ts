@@ -6,6 +6,8 @@ const attendanceSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Student',
     required: true
+    // Note: Mongoose auto-indexes required ObjectId refs
+    // We also have a compound index, which is fine - both will work
   },
   schoolId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -48,11 +50,14 @@ const attendanceSchema = new mongoose.Schema({
     type: String
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  autoIndex: true
 });
 
 // Index for faster queries
-attendanceSchema.index({ studentId: 1, date: 1 });
+// Note: studentId is auto-indexed by Mongoose (required ObjectId ref)
+// We create compound index which includes studentId, so the single index is redundant but harmless
+attendanceSchema.index({ studentId: 1, date: 1 }, { background: true });
 attendanceSchema.index({ date: 1 });
 
 export const Attendance = mongoose.model('Attendance', attendanceSchema);
