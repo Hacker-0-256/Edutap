@@ -280,4 +280,41 @@ router.delete('/:id', requireRole('admin', 'school'), async (req, res) => {
   }
 });
 
+// Add or update cardUID for a student
+router.put('/:id/card', requireRole('admin', 'school'), async (req, res) => {
+  try {
+    const { cardUID } = req.body;
+    if (!cardUID) {
+      return res.status(400).json({
+        success: false,
+        message: 'cardUID is required'
+      });
+    }
+
+    const student = await Student.findByIdAndUpdate(
+      req.params.id,
+      { cardUID },
+      { new: true, runValidators: true }
+    );
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Card assigned to student successfully',
+      data: student
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 export default router;
