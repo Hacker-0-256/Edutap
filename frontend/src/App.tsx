@@ -1,45 +1,50 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { ConfigProvider } from "antd";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+// import "./index.css";
 // Pages
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Students from './pages/Students';
-import AddEditStudent from './pages/AddEditStudent';
-import AttendanceMonitoring from './pages/AttendanceMonitoring';
-import AttendanceHistory from './pages/AttendanceHistory';
-import Payments from './pages/Payments';
-import PaymentVerification from './pages/PaymentVerification';
-import TransactionDetails from './pages/TransactionDetails';
-import AccountBalances from './pages/AccountBalances';
-import AccountDetails from './pages/AccountDetails';
-import Devices from './pages/Devices';
-import RegisterDevice from './pages/RegisterDevice';
-import DeviceDetails from './pages/DeviceDetails';
-import Merchants from './pages/Merchants';
-import AddEditMerchant from './pages/AddEditMerchant';
-import MerchantSalesReport from './pages/MerchantSalesReport';
-import CardManagement from './pages/CardManagement';
-import Reports from './pages/Reports';
-import Settings from './pages/Settings';
-import UserProfile from './pages/UserProfile';
-import Schools from './pages/Schools';
-import Users from './pages/Users';
-import SystemLogs from './pages/SystemLogs';
-import { RoleGuard } from './components/common/RoleGuard';
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Students from "./pages/Students";
+import AddEditStudent from "./pages/AddEditStudent";
+import AttendanceMonitoring from "./pages/AttendanceMonitoring";
+import AttendanceHistory from "./pages/AttendanceHistory";
+import Payments from "./pages/Payments";
+import PaymentVerification from "./pages/PaymentVerification";
+import TransactionDetails from "./pages/TransactionDetails";
+import AccountBalances from "./pages/AccountBalances";
+import AccountDetails from "./pages/AccountDetails";
+import Devices from "./pages/Devices";
+import RegisterDevice from "./pages/RegisterDevice";
+import DeviceDetails from "./pages/DeviceDetails";
+import Merchants from "./pages/Merchants";
+import AddEditMerchant from "./pages/AddEditMerchant";
+import MerchantSalesReport from "./pages/MerchantSalesReport";
+import CardManagement from "./pages/CardManagement";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
+import UserProfile from "./pages/UserProfile";
+import Schools from "./pages/Schools";
+import Users from "./pages/Users";
+import SystemLogs from "./pages/SystemLogs";
+import { RoleGuard } from "./components/common/RoleGuard";
 
 // Ant Design theme configuration
 const theme = {
   token: {
-    colorPrimary: '#1890ff',
-    colorSuccess: '#52c41a',
-    colorWarning: '#fa8c16',
-    colorError: '#f5222d',
+    colorPrimary: "#1890ff",
+    colorSuccess: "#52c41a",
+    colorWarning: "#fa8c16",
+    colorError: "#f5222d",
     borderRadius: 4,
   },
 };
@@ -55,12 +60,21 @@ const queryClient = new QueryClient({
 });
 
 // Protected Route Component
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
         <div>Loading...</div>
       </div>
     );
@@ -77,7 +91,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
-      
+
       {/* Protected Routes */}
       <Route
         path="/dashboard"
@@ -255,13 +269,13 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Admin-only routes */}
       <Route
         path="/schools"
         element={
           <ProtectedRoute>
-            <RoleGuard allowedRoles={['admin']}>
+            <RoleGuard allowedRoles={["admin"]}>
               <Schools />
             </RoleGuard>
           </ProtectedRoute>
@@ -271,7 +285,7 @@ function AppRoutes() {
         path="/users"
         element={
           <ProtectedRoute>
-            <RoleGuard allowedRoles={['admin']}>
+            <RoleGuard allowedRoles={["admin"]}>
               <Users />
             </RoleGuard>
           </ProtectedRoute>
@@ -281,13 +295,13 @@ function AppRoutes() {
         path="/logs"
         element={
           <ProtectedRoute>
-            <RoleGuard allowedRoles={['admin']}>
+            <RoleGuard allowedRoles={["admin"]}>
               <SystemLogs />
             </RoleGuard>
           </ProtectedRoute>
         }
       />
-      
+
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
